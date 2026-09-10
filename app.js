@@ -12,7 +12,7 @@ const SPECIAL_BENEFITS = [
   { key: 'MidAutumnSet', label: '中秋套餐' },
 ];
 
-const PAYMENT_METHODS = ['现金', 'Online Transfer', 'Touch \'n Go', 'Credit Card', '其他'];
+const PAYMENT_METHODS = ['现金', 'Touch \'n Go'];
 
 // ==================== Supabase ====================
 
