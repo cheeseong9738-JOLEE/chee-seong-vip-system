@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chee Seong VIP 会员系统</title>
+<style>
+  :root{
+    --bg:#121212;
+    --paper:#1C1A16;
+    --card:#232019;
+    --gold:#D4AF6A;
+    --gold-dark:#B08D45;
+    --ink:#F3EDE1;
+    --ink-soft:#B8AF9E;
+    --border:#3A3529;
+    --good:#5C9C6B;
+    --bad:#C2564A;
+    --locked:#5A5647;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    padding:18px 16px 14px;
+    background:var(--paper);
+    border-bottom:1px solid var(--border);
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  header h1{
+    margin:0;
+    font-size:19px;
+    letter-spacing:0.5px;
+    color:var(--gold);
+  }
+  header p{margin:4px 0 12px;font-size:12px;color:var(--ink-soft);}
+  .nav{display:flex;gap:8px;}
+  .nav-btn{
+    flex:1;
+    padding:9px 6px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--ink-soft);
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .nav-btn.active{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#1C1A16;
+    font-weight:600;
+  }
+  .operator-row{
+    margin-top:12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .operator-row input{
+    flex:1;
+    max-width:160px;
+  }
+  main{padding:16px;max-width:640px;margin:0 auto;}
+  .view{display:none;}
+  .view.active{display:block;}
+  input, select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--card);
+    color:var(--ink);
+    font-size:14px;
+  }
+  input:focus, select:focus{outline:none;border-color:var(--gold);}
+  label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:12px 0 5px;
+  }
+  button.primary{
+    margin-top:18px;
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:var(--gold);
+    color:#1C1A16;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button.primary:active{background:var(--gold-dark);}
+  #config-warning{
+    display:none;
+    background:var(--bad);
+    color:#fff;
+    padding:10px 16px;
+    font-size:13px;
+  }
+  .search-row{display:flex;gap:8px;}
+  .search-row input{flex:1;}
+  .search-row button{
+    padding:0 18px;
+    border:none;
+    border-radius:8px;
+    background:var(--gold);
+    color:#1C1A16;
+    font-weight:600;
+    cursor:pointer;
+  }
+  #search-results{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .empty-hint{color:var(--ink-soft);font-size:13px;text-align:center;padding:24px 0;}
+  .result-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+  }
+  .result-name{font-size:15px;font-weight:600;}
+  .result-sub{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .result-arrow{color:var(--gold);font-size:20px;}
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:600;
+    padding:2px 8px;
+    border-radius:99px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .badge-good{background:rgba(92,156,107,0.18);color:var(--good);}
+  .badge-bad{background:rgba(194,86,74,0.18);color:var(--bad);}
+  .back-btn{
+    background:none;
+    border:none;
+    color:var(--gold);
+    font-size:14px;
+    padding:0 0 12px;
+    cursor:pointer;
+  }
+  .detail-name{font-size:19px;font-weight:700;}
+  .detail-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+  #detail-header{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:18px;
+  }
+  .section-title{
+    font-size:13px;
+    color:var(--gold);
+    letter-spacing:0.5px;
+    margin:0 0 10px;
+  }
+  .dish-section{margin-bottom:22px;}
+  .dish-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+  }
+  .dish-tile{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:10px 8px;
+    text-align:center;
+  }
+  .dish-label{font-size:13px;font-weight:600;}
+  .dish-status{font-size:11px;margin-top:4px;color:var(--ink-soft);}
+  .dish-tile.st-ready{border-color:var(--gold);}
+  .dish-tile.st-ready .dish-status{color:var(--gold);font-weight:600;}
+  .dish-tile.can-redeem{cursor:pointer;}
+  .dish-tile.can-redeem:active{background:var(--gold-dark);}
+  .dish-tile.st-locked{opacity:0.45;}
+  .dish-tile.st-expired{opacity:0.55;}
+  .dish-tile.st-expired .dish-status{color:var(--bad);}
+  .dish-tile.st-done .dish-status{color:var(--good);}
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--gold);
+    color:#1C1A16;
+    padding:10px 20px;
+    border-radius:99px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    transition:all 0.2s;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="config-warning">还没有填 config.js 里的 Supabase 连接信息，系统暂时无法读写数据。</div>
+
+<header>
+  <h1>Chee Seong VIP 会员系统</h1>
+  <p>查询 · 注册 · 核销</p>
+  <div class="nav">
+    <button class="nav-btn active" data-view="search">查询会员</button>
+    <button class="nav-btn" data-view="register">注册新会员</button>
+  </div>
+  <div class="operator-row">
+    操作员：<input type="text" id="operator-name" placeholder="填你的名字">
+  </div>
+</header>
+
+<main>
+
+  <div id="view-search" class="view active">
+    <form id="search-form" class="search-row">
+      <input type="text" id="search-input" placeholder="输入电话号码或会员编号" autocomplete="off">
+      <button type="submit">查询</button>
+    </form>
+    <div id="search-results"></div>
+  </div>
+
+  <div id="view-register" class="view">
+    <form id="register-form">
+      <label>会员编号 *</label>
+      <input type="text" name="member_code" id="member_code" required placeholder="例：SP001">
+
+      <label>姓名 *</label>
+      <input type="text" name="name" id="name" required>
+
+      <label>Phone Number *</label>
+      <input type="text" name="phone" id="phone" required>
+
+      <label>IC</label>
+      <input type="text" name="ic" id="ic">
+
+      <label>推荐人 *</label>
+      <input type="text" name="referrer" id="referrer" required>
+
+      <label>付款方式</label>
+      <select name="payment_method" id="payment_method"></select>
+
+      <label>入会日期 *</label>
+      <input type="date" name="register_date" id="register_date" required>
+
+      <button type="submit" class="primary">注册</button>
+    </form>
+  </div>
+
+  <div id="view-detail" class="view">
+    <button class="back-btn" id="back-to-search">‹ 返回查询</button>
+    <div id="detail-header"></div>
+
+    <div class="dish-section">
+      <p class="section-title">每月菜品</p>
+      <div id="monthly-grid" class="dish-grid"></div>
+    </div>
+
+    <div class="dish-section">
+      <p class="section-title">一次性福利</p>
+      <div id="special-grid" class="dish-grid"></div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
