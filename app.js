@@ -139,9 +139,18 @@ function getOperatorName() {
 function initOperatorField() {
   const input = document.getElementById('operator-name');
   input.value = getOperatorName();
-  input.addEventListener('change', () => {
+  input.addEventListener('input', () => {
     localStorage.setItem('vip_operator_name', input.value.trim());
   });
+}
+
+// 注册/核销都要求先填操作员姓名，不然以后没办法追查是谁做的
+function requireOperatorName() {
+  const name = getOperatorName();
+  if (name) return true;
+  showToast('请先在上面填操作员姓名，才能注册/核销');
+  document.getElementById('operator-name').focus();
+  return false;
 }
 
 // ==================== 查询会员 ====================
@@ -211,6 +220,7 @@ async function registerMember(formData) {
     referrer: formData.referrer,
     register_date: formData.register_date,
     payment_method: formData.payment_method || null,
+    created_by: getOperatorName(),
   }).select().single();
   if (error) {
     showToast('注册失败：' + error.message);
@@ -304,6 +314,7 @@ function renderDishTile(label, status, onClick, row, benefitKey) {
 }
 
 async function redeemMonthly(dishMonth, period) {
+  if (!requireOperatorName()) return;
   const registerDate = parseLocalDate(currentMember.register_date);
   const already = currentMonthlyRedemptions.some(r => r.dish_month === dishMonth && r.period === period);
   const status = getDishStatus(registerDate, dishMonth, startOfToday(), already);
@@ -313,7 +324,7 @@ async function redeemMonthly(dishMonth, period) {
     member_id: currentMember.id,
     dish_month: dishMonth,
     period,
-    redeemed_by: getOperatorName() || null,
+    redeemed_by: getOperatorName(),
   });
   if (error) {
     showToast('核销失败：' + error.message);
@@ -324,6 +335,7 @@ async function redeemMonthly(dishMonth, period) {
 }
 
 async function redeemSpecial(benefitKey, period) {
+  if (!requireOperatorName()) return;
   const registerDate = parseLocalDate(currentMember.register_date);
   const already = currentSpecialRedemptions.some(r => r.benefit_type === benefitKey && r.period === period);
   const status = getSpecialStatus(registerDate, startOfToday(), already);
@@ -333,7 +345,7 @@ async function redeemSpecial(benefitKey, period) {
     member_id: currentMember.id,
     benefit_type: benefitKey,
     period,
-    redeemed_by: getOperatorName() || null,
+    redeemed_by: getOperatorName(),
   });
   if (error) {
     showToast('核销失败：' + error.message);
@@ -362,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!requireOperatorName()) return;
     const form = e.target;
     const formData = {
       member_code: form.member_code.value.trim(),

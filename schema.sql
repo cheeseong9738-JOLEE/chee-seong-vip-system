@@ -13,6 +13,7 @@ create table if not exists members (
   referrer text,
   register_date date not null,
   payment_method text,
+  created_by text not null, -- 谁注册的这个会员（不用密码登入，靠员工自己填名字，方便日后追查）
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -27,7 +28,7 @@ create table if not exists monthly_redemptions (
   member_id uuid not null references members(id) on delete cascade,
   dish_month int not null check (dish_month between 1 and 12),
   redeemed_at timestamptz not null default now(),
-  redeemed_by text,
+  redeemed_by text not null, -- 核销员工的名字，没有密码登入，靠这个栏位追查是谁核销的
   -- period = 该次领取所属的会员周年周期起始日（例如 "2026-04-08"），
   -- 用于续会后重置名额时区分批次，逻辑与 getCycleStart() 共用
   period date not null,
@@ -44,7 +45,7 @@ create table if not exists special_redemptions (
   benefit_type text not null check (benefit_type in ('RM10','RM20','RM30','BirthdayCake','CNYSet','ParentsSet','MidAutumnSet')),
   period date not null,
   redeemed_at timestamptz not null default now(),
-  redeemed_by text,
+  redeemed_by text not null, -- 核销员工的名字
   created_at timestamptz not null default now(),
   unique (member_id, benefit_type, period)
 );
