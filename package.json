@@ -1,0 +1,7 @@
+{
+  "name": "chee-seong-vip-system",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
