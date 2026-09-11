@@ -123,6 +123,29 @@ let currentMember = null;
 let currentMonthlyRedemptions = [];
 let currentSpecialRedemptions = [];
 
+// ==================== 核销前二次确认（防止按错） ====================
+
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-message').textContent = message;
+    overlay.classList.add('show');
+
+    const cleanup = (result) => {
+      overlay.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const okBtn = document.getElementById('confirm-ok');
+    const cancelBtn = document.getElementById('confirm-cancel');
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+
 // ==================== 视图切换 ====================
 
 function showView(name) {
@@ -330,6 +353,9 @@ async function redeemMonthly(dishMonth, period) {
   const status = getDishStatus(registerDate, dishMonth, startOfToday(), already);
   if (status !== '可领取') return;
 
+  const confirmed = await showConfirm(`确定要核销「${currentMember.name}」${DISH_MONTH_LABELS[dishMonth - 1]}的菜品吗？`);
+  if (!confirmed) return;
+
   const { error } = await sb.from('monthly_redemptions').insert({
     member_id: currentMember.id,
     dish_month: dishMonth,
@@ -350,6 +376,10 @@ async function redeemSpecial(benefitKey, period) {
   const already = currentSpecialRedemptions.some(r => r.benefit_type === benefitKey && r.period === period);
   const status = getSpecialStatus(registerDate, startOfToday(), already);
   if (status !== '可领取') return;
+
+  const benefitLabel = SPECIAL_BENEFITS.find(b => b.key === benefitKey)?.label || benefitKey;
+  const confirmed = await showConfirm(`确定要核销「${currentMember.name}」的${benefitLabel}吗？`);
+  if (!confirmed) return;
 
   const { error } = await sb.from('special_redemptions').insert({
     member_id: currentMember.id,
