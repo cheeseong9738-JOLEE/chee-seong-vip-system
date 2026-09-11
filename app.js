@@ -88,11 +88,15 @@ function getDishStatus(registerDate, dishMonth, today, redeemed) {
     // 就只有 3/31 这一天）；过了就先"未开放"，一直到明年同一个月的 1 号
     // 再重新开放一次，直到周年日前一天为止（周年日当天已经算续会/过期）。
     // 中间那段空窗期不算"已作废"——留到明年还有一次机会。
+    // 但如果是当月 1 号入会，"明年重新开放"那个窗口长度是 0（windowBStart == cycleEnd），
+    // 代表根本没有下一次机会了，这种情况过了当月就该直接算"已作废"，不能一直挂着"未开放"
+    // 让人误以为以后还会开。
     const windowAEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 1);
     const windowBStart = new Date(cycleEnd.getFullYear(), cycleEnd.getMonth(), 1);
 
     if (today >= cycleStart && today < windowAEnd) return '可领取';
     if (today >= windowBStart && today < cycleEnd) return '可领取';
+    if (windowBStart >= cycleEnd) return '已作废'; // 没有第二个窗口，永远不会再开放
     return '未开放';
   }
 
