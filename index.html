@@ -6,17 +6,19 @@
 <title>Chee Seong VIP 会员系统</title>
 <style>
   :root{
-    --bg:#FBF3E7;
+    --bg:#E4602A;
     --paper:#FFFFFF;
     --card:#FFF9F1;
-    --gold:#E4602A;
-    --gold-dark:#C94F1E;
+    --gold:#3D2318;
+    --gold-dark:#2A170F;
     --ink:#2B1B12;
     --ink-soft:#8C7A6B;
     --border:#EAD9C3;
     --good:#3F7D45;
     --bad:#B23B2E;
     --locked:#D8C7B2;
+    --on-bg:#FFFFFF;
+    --on-bg-soft:rgba(255,255,255,0.85);
   }
   *{box-sizing:border-box;}
   body{
@@ -28,8 +30,8 @@
   }
   header{
     padding:18px 16px 14px;
-    background:var(--paper);
-    border-bottom:1px solid var(--border);
+    background:var(--bg);
+    border-bottom:1px solid rgba(0,0,0,0.1);
     position:sticky;
     top:0;
     z-index:20;
@@ -38,24 +40,24 @@
     margin:0;
     font-size:19px;
     letter-spacing:0.5px;
-    color:var(--gold);
+    color:var(--on-bg);
   }
-  header p{margin:4px 0 12px;font-size:12px;color:var(--ink-soft);}
+  header p{margin:4px 0 12px;font-size:12px;color:var(--on-bg-soft);}
   .nav{display:flex;gap:8px;}
   .nav-btn{
     flex:1;
     padding:9px 6px;
     background:transparent;
-    border:1px solid var(--border);
-    color:var(--ink-soft);
+    border:1px solid rgba(255,255,255,0.55);
+    color:var(--on-bg-soft);
     border-radius:8px;
     font-size:13px;
     cursor:pointer;
   }
   .nav-btn.active{
-    background:var(--gold);
-    border-color:var(--gold);
-    color:var(--ink);
+    background:var(--on-bg);
+    border-color:var(--on-bg);
+    color:var(--gold);
     font-weight:600;
   }
   .operator-row{
@@ -64,7 +66,7 @@
     align-items:center;
     gap:8px;
     font-size:12px;
-    color:var(--ink-soft);
+    color:var(--on-bg-soft);
   }
   .operator-row input{
     flex:1;
@@ -96,7 +98,7 @@
     border:none;
     border-radius:8px;
     background:var(--gold);
-    color:var(--ink);
+    color:var(--on-bg);
     font-size:15px;
     font-weight:600;
     cursor:pointer;
@@ -116,7 +118,7 @@
     border:none;
     border-radius:8px;
     background:var(--gold);
-    color:var(--ink);
+    color:var(--on-bg);
     font-weight:600;
     cursor:pointer;
   }
@@ -188,8 +190,8 @@
   .dish-tile.st-ready .dish-status{color:var(--gold);font-weight:600;}
   .dish-tile.can-redeem{cursor:pointer;}
   .dish-tile.can-redeem:active{background:var(--gold-dark);}
-  .dish-tile.st-locked{opacity:0.45;}
-  .dish-tile.st-expired{opacity:0.55;}
+  .dish-tile.st-locked .dish-label{color:var(--ink-soft);}
+  .dish-tile.st-expired .dish-label{color:var(--ink-soft);}
   .dish-tile.st-expired .dish-status{color:var(--bad);}
   .dish-tile.st-done .dish-status{color:var(--good);}
   .toast{
@@ -198,7 +200,7 @@
     left:50%;
     transform:translateX(-50%) translateY(20px);
     background:var(--gold);
-    color:var(--ink);
+    color:var(--on-bg);
     padding:10px 20px;
     border-radius:99px;
     font-size:13px;
@@ -247,7 +249,7 @@
     cursor:pointer;
   }
   .modal-btn-cancel{background:transparent;color:var(--ink-soft);}
-  .modal-btn-ok{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+  .modal-btn-ok{background:var(--gold);color:var(--on-bg);border-color:var(--gold);}
 </style>
 </head>
 <body>
