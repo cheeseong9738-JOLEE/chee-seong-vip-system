@@ -80,20 +80,26 @@ function getDishStatus(registerDate, dishMonth, today, redeemed) {
   if (redeemed) return '已领取';
 
   const cycleStart = getCycleStart(registerDate, today);
+  const cycleEnd = addYears(cycleStart, 1);
   const rm = registerDate.getMonth() + 1; // 1~12
 
-  // 入会当月以外的月份，属于 cycleStart 那一年还是次年，取决于是否已经"轮到"过 register month
-  const year = dishMonth >= rm ? cycleStart.getFullYear() : cycleStart.getFullYear() + 1;
-
-  let start, end;
   if (dishMonth === rm) {
-    // 入会当月：有效期延长到明年周年日之前
-    start = cycleStart;
-    end = addYears(cycleStart, 1);
-  } else {
-    start = new Date(year, dishMonth - 1, 1);
-    end = new Date(year, dishMonth, 1); // 次月1号 00:00
+    // 入会当月比较特别：入会那一刻到当月月底算一个窗口（比如 3/31 入会，
+    // 就只有 3/31 这一天）；过了就先"未开放"，一直到明年同一个月的 1 号
+    // 再重新开放一次，直到周年日前一天为止（周年日当天已经算续会/过期）。
+    // 中间那段空窗期不算"已作废"——留到明年还有一次机会。
+    const windowAEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 1);
+    const windowBStart = new Date(cycleEnd.getFullYear(), cycleEnd.getMonth(), 1);
+
+    if (today >= cycleStart && today < windowAEnd) return '可领取';
+    if (today >= windowBStart && today < cycleEnd) return '可领取';
+    return '未开放';
   }
+
+  // 其余月份：属于 cycleStart 那一年还是次年，取决于是否已经"轮到"过 register month
+  const year = dishMonth >= rm ? cycleStart.getFullYear() : cycleStart.getFullYear() + 1;
+  const start = new Date(year, dishMonth - 1, 1);
+  const end = new Date(year, dishMonth, 1); // 次月1号 00:00
 
   if (today < start) return '未开放';
   if (today >= end) return '已作废';
