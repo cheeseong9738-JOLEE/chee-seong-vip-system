@@ -69,12 +69,12 @@ async function getValues(a1) {
 }
 
 async function updateValues(a1, values) {
-  const path = `/values/${encodeURIComponent(sheetRange(a1))}?valueInputOption=USER_ENTERED`;
+  const path = `/values/${encodeURIComponent(sheetRange(a1))}?valueInputOption=RAW`;
   return sheetsApi(path, { method: 'PUT', body: JSON.stringify({ values }) });
 }
 
 async function appendRow(values) {
-  const path = `/values/${encodeURIComponent(sheetRange('A1'))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const path = `/values/${encodeURIComponent(sheetRange('A1'))}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
   return sheetsApi(path, { method: 'POST', body: JSON.stringify({ values: [values] }) });
 }
 
