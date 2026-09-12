@@ -18,6 +18,9 @@ const PAYMENT_METHODS = ['现金', 'Touch \'n Go'];
 // 例：013-8900455 / 03-88123456
 const PHONE_PATTERN = /^0\d{1,2}-\d{6,8}$/;
 
+// 马来西亚 IC 格式：出生日期6位-州属2位-序号4位，例：000000-00-0000
+const IC_PATTERN = /^\d{6}-\d{2}-\d{4}$/;
+
 // ==================== Supabase ====================
 
 const sb = (window.SUPABASE_URL && window.SUPABASE_ANON_KEY)
@@ -423,6 +426,13 @@ document.addEventListener('DOMContentLoaded', () => {
     phoneError.classList.remove('show');
   });
 
+  const icInput = document.getElementById('ic');
+  const icError = document.getElementById('ic-error');
+  icInput.addEventListener('input', () => {
+    icInput.classList.remove('invalid');
+    icError.classList.remove('show');
+  });
+
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!requireOperatorName()) return;
@@ -432,6 +442,14 @@ document.addEventListener('DOMContentLoaded', () => {
       phoneInput.classList.add('invalid');
       phoneError.classList.add('show');
       phoneInput.focus();
+      return;
+    }
+
+    const icValue = form.ic.value.trim();
+    if (icValue && !IC_PATTERN.test(icValue)) {
+      icInput.classList.add('invalid');
+      icError.classList.add('show');
+      icInput.focus();
       return;
     }
 
