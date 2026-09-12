@@ -403,13 +403,76 @@ async function redeemSpecial(benefitKey, period) {
   openMemberDetail(currentMember.id);
 }
 
+// ==================== 核销记录 ====================
+
+async function loadRedemptionLog() {
+  const [monthlyRes, specialRes] = await Promise.all([
+    sb.from('monthly_redemptions')
+      .select('redeemed_at, redeemed_by, dish_month, members(member_code, name, phone)')
+      .order('redeemed_at', { ascending: false })
+      .limit(100),
+    sb.from('special_redemptions')
+      .select('redeemed_at, redeemed_by, benefit_type, members(member_code, name, phone)')
+      .order('redeemed_at', { ascending: false })
+      .limit(100),
+  ]);
+  if (monthlyRes.error || specialRes.error) {
+    showToast('读取核销记录失败');
+    return;
+  }
+
+  const entries = [
+    ...(monthlyRes.data || []).map(r => ({
+      redeemed_at: r.redeemed_at,
+      redeemed_by: r.redeemed_by,
+      itemLabel: `${DISH_MONTH_LABELS[r.dish_month - 1]}菜品`,
+      member: r.members,
+    })),
+    ...(specialRes.data || []).map(r => ({
+      redeemed_at: r.redeemed_at,
+      redeemed_by: r.redeemed_by,
+      itemLabel: SPECIAL_BENEFITS.find(b => b.key === r.benefit_type)?.label || r.benefit_type,
+      member: r.members,
+    })),
+  ];
+  entries.sort((a, b) => new Date(b.redeemed_at) - new Date(a.redeemed_at));
+  renderLogList(entries.slice(0, 150));
+}
+
+function renderLogList(entries) {
+  const box = document.getElementById('log-list');
+  if (entries.length === 0) {
+    box.innerHTML = `<div class="empty-hint">还没有核销记录</div>`;
+    return;
+  }
+  box.innerHTML = entries.map(e => {
+    const time = new Date(e.redeemed_at).toLocaleString('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    });
+    const memberName = e.member ? escapeHtml(e.member.name) : '(会员已删除)';
+    const memberCode = e.member ? escapeHtml(e.member.member_code) : '';
+    return `
+      <div class="log-item">
+        <div class="log-item-top">
+          <div class="log-item-name">${escapeHtml(e.itemLabel)} · ${memberName}</div>
+          <div class="log-item-time">${time}</div>
+        </div>
+        <div class="log-item-meta">${memberCode} · 操作员：<span class="log-item-operator">${escapeHtml(e.redeemed_by || '-')}</span></div>
+      </div>
+    `;
+  }).join('');
+}
+
 // ==================== 事件绑定 ====================
 
 document.addEventListener('DOMContentLoaded', () => {
   initOperatorField();
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => showView(btn.dataset.view));
+    btn.addEventListener('click', () => {
+      showView(btn.dataset.view);
+      if (btn.dataset.view === 'log') loadRedemptionLog();
+    });
   });
 
   document.getElementById('search-form').addEventListener('submit', async (e) => {

@@ -141,6 +141,18 @@
   .result-name{font-size:15px;font-weight:600;}
   .result-sub{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
   .result-arrow{color:var(--gold);font-size:20px;}
+  #log-list{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+  .log-item{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .log-item-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .log-item-name{font-size:14px;font-weight:600;}
+  .log-item-time{font-size:11.5px;color:var(--ink-soft);white-space:nowrap;}
+  .log-item-meta{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+  .log-item-operator{color:var(--gold);font-weight:600;}
   .badge{
     display:inline-block;
     font-size:11px;
@@ -270,6 +282,7 @@
   <div class="nav">
     <button class="nav-btn active" data-view="search">查询会员</button>
     <button class="nav-btn" data-view="register">注册新会员</button>
+    <button class="nav-btn" data-view="log">核销记录</button>
   </div>
   <div class="operator-row">
     操作员 * ：<input type="text" id="operator-name" placeholder="填你的名字，注册/核销前必填">
@@ -328,6 +341,11 @@
       <p class="section-title">一次性福利</p>
       <div id="special-grid" class="dish-grid"></div>
     </div>
+  </div>
+
+  <div id="view-log" class="view">
+    <p class="section-title">最近核销记录</p>
+    <div id="log-list"></div>
   </div>
 
 </main>
