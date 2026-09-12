@@ -438,18 +438,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!requireOperatorName()) return;
     const form = e.target;
 
+    let firstInvalid = null;
+
     if (!PHONE_PATTERN.test(form.phone.value.trim())) {
       phoneInput.classList.add('invalid');
       phoneError.classList.add('show');
-      phoneInput.focus();
-      return;
+      firstInvalid = firstInvalid || phoneInput;
     }
 
-    const icValue = form.ic.value.trim();
-    if (icValue && !IC_PATTERN.test(icValue)) {
+    if (!IC_PATTERN.test(form.ic.value.trim())) {
       icInput.classList.add('invalid');
       icError.classList.add('show');
-      icInput.focus();
+      firstInvalid = firstInvalid || icInput;
+    }
+
+    if (firstInvalid) {
+      firstInvalid.focus();
       return;
     }
 
