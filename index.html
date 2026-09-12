@@ -86,6 +86,9 @@
     font-size:14px;
   }
   input:focus, select:focus{outline:none;border-color:var(--gold);}
+  input.invalid{border-color:var(--bad);}
+  .field-error{display:none;color:var(--bad);font-size:12px;margin-top:5px;}
+  .field-error.show{display:block;}
   label{
     display:block;
     font-size:12.5px;
@@ -292,7 +295,8 @@
       <input type="text" name="name" id="name" required>
 
       <label>Phone Number *</label>
-      <input type="text" name="phone" id="phone" required>
+      <input type="text" name="phone" id="phone" required placeholder="例：013-8900455">
+      <div class="field-error" id="phone-error">电话号码格式不对，要包含 - ，例：013-8900455</div>
 
       <label>IC</label>
       <input type="text" name="ic" id="ic">

@@ -14,6 +14,10 @@ const SPECIAL_BENEFITS = [
 
 const PAYMENT_METHODS = ['现金', 'Touch \'n Go'];
 
+// 马来西亚电话格式：0 开头，区码 2~3 位，中间一定要有 "-"，后面 6~8 位数字
+// 例：013-8900455 / 03-88123456
+const PHONE_PATTERN = /^0\d{1,2}-\d{6,8}$/;
+
 // ==================== Supabase ====================
 
 const sb = (window.SUPABASE_URL && window.SUPABASE_ANON_KEY)
@@ -412,10 +416,25 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSearchResults(results);
   });
 
+  const phoneInput = document.getElementById('phone');
+  const phoneError = document.getElementById('phone-error');
+  phoneInput.addEventListener('input', () => {
+    phoneInput.classList.remove('invalid');
+    phoneError.classList.remove('show');
+  });
+
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!requireOperatorName()) return;
     const form = e.target;
+
+    if (!PHONE_PATTERN.test(form.phone.value.trim())) {
+      phoneInput.classList.add('invalid');
+      phoneError.classList.add('show');
+      phoneInput.focus();
+      return;
+    }
+
     const formData = {
       member_code: form.member_code.value.trim(),
       name: form.name.value.trim(),
