@@ -405,9 +405,10 @@ function renderDishTile(label, status, onClick, row, benefitKey) {
     '已领取': 'st-done',
     '已过期': 'st-expired',
   }[status];
-  // TEMP-BACKFILL：导入旧会员资料期间，允许点"已作废/已过期"补登历史领取日期。
-  // 导入结束后请把这两个状态从这里、redeemMonthly、redeemSpecial 里移除。
-  const clickable = status === '可领取' || status === '已作废' || status === '已过期';
+  // TEMP-BACKFILL：导入旧会员资料期间，除了"已领取"以外都能点，补登历史领取日期
+  // （包含"未开放"——入会月的空窗期在旧系统其实早就领过了）。
+  // 导入结束后请把这个条件改回 status === '可领取'，同时处理 redeemMonthly、redeemSpecial。
+  const clickable = status !== '已领取';
   const dataAttr = benefitKey
     ? `data-benefit="${benefitKey}"`
     : `data-month="${DISH_MONTH_LABELS.indexOf(label) + 1}"`;
@@ -427,12 +428,12 @@ async function redeemMonthly(dishMonth, period) {
   const registerDate = parseLocalDate(currentMember.register_date);
   const already = currentMonthlyRedemptions.some(r => r.dish_month === dishMonth && r.period === period);
   const status = getDishStatus(registerDate, dishMonth, startOfToday(), already);
-  if (status !== '可领取' && status !== '已作废') return; // TEMP-BACKFILL：已作废用于补登旧资料，导入完请删掉
+  if (status === '已领取') return; // TEMP-BACKFILL：除了已领取，其他状态都能补登，导入完请改回 status !== '可领取'
 
   const label = DISH_MONTH_LABELS[dishMonth - 1];
   let redeemedAt;
-  if (status === '已作废') {
-    const picked = await showConfirm(`「${label}」已经作废，这是补登旧系统的历史领取记录吗？请选实际领取日期：`, {
+  if (status !== '可领取') {
+    const picked = await showConfirm(`「${label}」现在状态是"${status}"，这是补登旧系统的历史领取记录吗？请选实际领取日期：`, {
       withDate: true,
       defaultDate: toISODate(startOfToday()),
     });
