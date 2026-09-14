@@ -136,10 +136,14 @@ let currentSpecialRedemptions = [];
 
 // ==================== 核销前二次确认（防止按错） ====================
 
-function showConfirm(message) {
+// options.withDate: 补登历史资料用——跳出日期选择，OK 回传选的日期字串，取消回传 null
+function showConfirm(message, options = {}) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('confirm-overlay');
     document.getElementById('confirm-message').textContent = message;
+    const dateInput = document.getElementById('confirm-date');
+    dateInput.style.display = options.withDate ? '' : 'none';
+    if (options.withDate) dateInput.value = options.defaultDate || toISODate(startOfToday());
     overlay.classList.add('show');
 
     const cleanup = (result) => {
@@ -150,8 +154,8 @@ function showConfirm(message) {
     };
     const okBtn = document.getElementById('confirm-ok');
     const cancelBtn = document.getElementById('confirm-cancel');
-    const onOk = () => cleanup(true);
-    const onCancel = () => cleanup(false);
+    const onOk = () => cleanup(options.withDate ? (dateInput.value || null) : true);
+    const onCancel = () => cleanup(options.withDate ? null : false);
     okBtn.addEventListener('click', onOk);
     cancelBtn.addEventListener('click', onCancel);
   });
@@ -401,7 +405,9 @@ function renderDishTile(label, status, onClick, row, benefitKey) {
     '已领取': 'st-done',
     '已过期': 'st-expired',
   }[status];
-  const clickable = status === '可领取';
+  // TEMP-BACKFILL：导入旧会员资料期间，允许点"已作废/已过期"补登历史领取日期。
+  // 导入结束后请把这两个状态从这里、redeemMonthly、redeemSpecial 里移除。
+  const clickable = status === '可领取' || status === '已作废' || status === '已过期';
   const dataAttr = benefitKey
     ? `data-benefit="${benefitKey}"`
     : `data-month="${DISH_MONTH_LABELS.indexOf(label) + 1}"`;
@@ -421,15 +427,28 @@ async function redeemMonthly(dishMonth, period) {
   const registerDate = parseLocalDate(currentMember.register_date);
   const already = currentMonthlyRedemptions.some(r => r.dish_month === dishMonth && r.period === period);
   const status = getDishStatus(registerDate, dishMonth, startOfToday(), already);
-  if (status !== '可领取') return;
+  if (status !== '可领取' && status !== '已作废') return; // TEMP-BACKFILL：已作废用于补登旧资料，导入完请删掉
 
-  const confirmed = await showConfirm(`确定要核销「${currentMember.name}」${DISH_MONTH_LABELS[dishMonth - 1]}的菜品吗？`);
-  if (!confirmed) return;
+  const label = DISH_MONTH_LABELS[dishMonth - 1];
+  let redeemedAt;
+  if (status === '已作废') {
+    const picked = await showConfirm(`「${label}」已经作废，这是补登旧系统的历史领取记录吗？请选实际领取日期：`, {
+      withDate: true,
+      defaultDate: toISODate(startOfToday()),
+    });
+    if (!picked) return;
+    redeemedAt = picked;
+  } else {
+    const confirmed = await showConfirm(`确定要核销「${currentMember.name}」${label}的菜品吗？`);
+    if (!confirmed) return;
+    redeemedAt = new Date().toISOString();
+  }
 
   const { error } = await sb.from('monthly_redemptions').insert({
     member_id: currentMember.id,
     dish_month: dishMonth,
     period,
+    redeemed_at: redeemedAt,
     redeemed_by: getOperatorName(),
   });
   if (error) {
@@ -445,16 +464,28 @@ async function redeemSpecial(benefitKey, period) {
   const registerDate = parseLocalDate(currentMember.register_date);
   const already = currentSpecialRedemptions.some(r => r.benefit_type === benefitKey && r.period === period);
   const status = getSpecialStatus(registerDate, startOfToday(), already);
-  if (status !== '可领取') return;
+  if (status !== '可领取' && status !== '已过期') return; // TEMP-BACKFILL：已过期用于补登旧资料，导入完请删掉
 
   const benefitLabel = SPECIAL_BENEFITS.find(b => b.key === benefitKey)?.label || benefitKey;
-  const confirmed = await showConfirm(`确定要核销「${currentMember.name}」的${benefitLabel}吗？`);
-  if (!confirmed) return;
+  let redeemedAt;
+  if (status === '已过期') {
+    const picked = await showConfirm(`「${benefitLabel}」会员已过期，这是补登旧系统的历史领取记录吗？请选实际领取日期：`, {
+      withDate: true,
+      defaultDate: toISODate(startOfToday()),
+    });
+    if (!picked) return;
+    redeemedAt = picked;
+  } else {
+    const confirmed = await showConfirm(`确定要核销「${currentMember.name}」的${benefitLabel}吗？`);
+    if (!confirmed) return;
+    redeemedAt = new Date().toISOString();
+  }
 
   const { error } = await sb.from('special_redemptions').insert({
     member_id: currentMember.id,
     benefit_type: benefitKey,
     period,
+    redeemed_at: redeemedAt,
     redeemed_by: getOperatorName(),
   });
   if (error) {
