@@ -14,6 +14,10 @@ const SPECIAL_BENEFITS = [
 
 const PAYMENT_METHODS = ['现金', 'Touch \'n Go'];
 
+// 操作员 / 推荐人共用同一份员工名单
+const STAFF_LIST = ['BENZ', 'YAN', 'SHUQI', 'PAULINE', 'ANGEL', 'XIAOHAO', 'SOBU', 'PEIQI', 'EZAC', 'CRYSTAL'];
+const OTHER_VALUE = '__other__';
+
 // 马来西亚电话格式：0 开头，区码 2~3 位，中间一定要有 "-"，后面 6~8 位数字
 // 例：013-8900455 / 03-88123456
 const PHONE_PATTERN = /^0\d{1,2}-\d{6,8}$/;
@@ -170,17 +174,57 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+// ==================== 名单下拉 + 其他（操作员/推荐人共用） ====================
+
+function populateStaffSelect(selectEl) {
+  selectEl.innerHTML = `<option value="">请选择</option>` +
+    STAFF_LIST.map(s => `<option value="${s}">${s}</option>`).join('') +
+    `<option value="${OTHER_VALUE}">其他</option>`;
+}
+
+function getSelectOtherValue(selectEl, otherInputEl) {
+  return selectEl.value === OTHER_VALUE ? otherInputEl.value.trim() : selectEl.value;
+}
+
+function setSelectOtherValue(selectEl, otherInputEl, value) {
+  if (value && STAFF_LIST.includes(value)) {
+    selectEl.value = value;
+    otherInputEl.style.display = 'none';
+    otherInputEl.value = '';
+  } else if (value) {
+    selectEl.value = OTHER_VALUE;
+    otherInputEl.style.display = '';
+    otherInputEl.value = value;
+  } else {
+    selectEl.value = '';
+    otherInputEl.style.display = 'none';
+    otherInputEl.value = '';
+  }
+}
+
+function wireSelectOther(selectEl, otherInputEl, onChange) {
+  selectEl.addEventListener('change', () => {
+    otherInputEl.style.display = selectEl.value === OTHER_VALUE ? '' : 'none';
+    if (selectEl.value === OTHER_VALUE) otherInputEl.focus();
+    onChange();
+  });
+  otherInputEl.addEventListener('input', onChange);
+}
+
 // ==================== 操作员姓名（本地记住） ====================
 
+const operatorSelect = document.getElementById('operator-select');
+const operatorOther = document.getElementById('operator-other');
+
 function getOperatorName() {
-  return localStorage.getItem('vip_operator_name') || '';
+  return getSelectOtherValue(operatorSelect, operatorOther);
 }
 
 function initOperatorField() {
-  const input = document.getElementById('operator-name');
-  input.value = getOperatorName();
-  input.addEventListener('input', () => {
-    localStorage.setItem('vip_operator_name', input.value.trim());
+  populateStaffSelect(operatorSelect);
+  setSelectOtherValue(operatorSelect, operatorOther, localStorage.getItem('vip_operator_name') || '');
+  wireSelectOther(operatorSelect, operatorOther, () => {
+    localStorage.setItem('vip_operator_name', getOperatorName());
   });
 }
 
@@ -188,8 +232,8 @@ function initOperatorField() {
 function requireOperatorName() {
   const name = getOperatorName();
   if (name) return true;
-  showToast('请先在上面填操作员姓名，才能注册/核销');
-  document.getElementById('operator-name').focus();
+  showToast('请先在上面选操作员，才能注册/核销');
+  (operatorSelect.value === OTHER_VALUE ? operatorOther : operatorSelect).focus();
   return false;
 }
 
@@ -576,6 +620,15 @@ document.addEventListener('DOMContentLoaded', () => {
     icError.classList.remove('show');
   });
 
+  const referrerSelect = document.getElementById('referrer-select');
+  const referrerOther = document.getElementById('referrer-other');
+  const referrerError = document.getElementById('referrer-error');
+  populateStaffSelect(referrerSelect);
+  wireSelectOther(referrerSelect, referrerOther, () => {
+    referrerSelect.classList.remove('invalid');
+    referrerError.classList.remove('show');
+  });
+
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!requireOperatorName()) return;
@@ -595,6 +648,13 @@ document.addEventListener('DOMContentLoaded', () => {
       firstInvalid = firstInvalid || icInput;
     }
 
+    const referrerValue = getSelectOtherValue(referrerSelect, referrerOther);
+    if (!referrerValue) {
+      referrerSelect.classList.add('invalid');
+      referrerError.classList.add('show');
+      firstInvalid = firstInvalid || (referrerSelect.value === OTHER_VALUE ? referrerOther : referrerSelect);
+    }
+
     if (firstInvalid) {
       firstInvalid.focus();
       return;
@@ -605,7 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
       name: form.name.value.trim(),
       ic: form.ic.value.trim(),
       phone: form.phone.value.trim(),
-      referrer: form.referrer.value.trim(),
+      referrer: referrerValue,
       register_date: form.register_date.value,
       payment_method: form.payment_method.value,
     };
@@ -613,6 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (member) {
       showToast('注册成功');
       form.reset();
+      setSelectOtherValue(referrerSelect, referrerOther, '');
       form.register_date.value = toISODate(startOfToday());
       openMemberDetail(member.id);
     }

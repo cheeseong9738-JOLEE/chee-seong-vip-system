@@ -87,7 +87,9 @@
     font-size:14px;
   }
   input:focus, select:focus{outline:none;border-color:var(--gold);}
-  input.invalid{border-color:var(--bad);}
+  #operator-other, #referrer-other{margin-top:8px;}
+  #operator-select{max-width:160px;}
+  input.invalid, select.invalid{border-color:var(--bad);}
   .field-error{display:none;color:var(--bad);font-size:12px;margin-top:5px;}
   .field-error.show{display:block;}
   label{
@@ -305,7 +307,9 @@
     <button class="nav-btn" data-view="members">会员列表</button>
   </div>
   <div class="operator-row">
-    操作员 * ：<input type="text" id="operator-name" placeholder="填你的名字，注册/核销前必填">
+    操作员 * ：
+    <select id="operator-select"></select>
+    <input type="text" id="operator-other" placeholder="输入名字" style="display:none;">
   </div>
 </header>
 
@@ -336,7 +340,9 @@
       <div class="field-error" id="ic-error">IC 格式不对，要包含 - ，例：000000-00-0000</div>
 
       <label>推荐人 *</label>
-      <input type="text" name="referrer" id="referrer" required>
+      <select id="referrer-select"></select>
+      <input type="text" id="referrer-other" placeholder="输入名字" style="display:none;">
+      <div class="field-error" id="referrer-error">请选择或填写推荐人</div>
 
       <label>付款方式</label>
       <select name="payment_method" id="payment_method"></select>
