@@ -286,6 +286,25 @@ function escapeHtml(str) {
 
 // ==================== 注册新会员 ====================
 
+// 根据分行前缀（SP/SD）算出下一个还没用过的会员编号，例：现有最大是 SP035 就回传 SP036
+async function generateNextMemberCode(prefix) {
+  const { data, error } = await sb
+    .from('members')
+    .select('member_code')
+    .ilike('member_code', `${prefix}%`);
+  if (error) {
+    showToast('产生会员编号失败：' + error.message);
+    return '';
+  }
+  let max = 0;
+  const pattern = new RegExp(`^${prefix}(\\d+)$`, 'i');
+  (data || []).forEach(m => {
+    const match = (m.member_code || '').match(pattern);
+    if (match) max = Math.max(max, parseInt(match[1], 10));
+  });
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
+}
+
 async function registerMember(formData) {
   const { data: existing } = await sb
     .from('members')
@@ -629,12 +648,32 @@ document.addEventListener('DOMContentLoaded', () => {
     referrerError.classList.remove('show');
   });
 
+  const branchSelect = document.getElementById('branch-select');
+  const branchError = document.getElementById('branch-error');
+  const memberCodeInput = document.getElementById('member_code');
+  branchSelect.addEventListener('change', async () => {
+    branchSelect.classList.remove('invalid');
+    branchError.classList.remove('show');
+    if (!branchSelect.value) {
+      memberCodeInput.value = '';
+      return;
+    }
+    memberCodeInput.value = '产生中…';
+    memberCodeInput.value = await generateNextMemberCode(branchSelect.value);
+  });
+
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!requireOperatorName()) return;
     const form = e.target;
 
     let firstInvalid = null;
+
+    if (!branchSelect.value) {
+      branchSelect.classList.add('invalid');
+      branchError.classList.add('show');
+      firstInvalid = firstInvalid || branchSelect;
+    }
 
     if (!PHONE_PATTERN.test(form.phone.value.trim())) {
       phoneInput.classList.add('invalid');
@@ -674,6 +713,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('注册成功');
       form.reset();
       setSelectOtherValue(referrerSelect, referrerOther, '');
+      branchSelect.value = '';
+      memberCodeInput.value = '';
       form.register_date.value = toISODate(startOfToday());
       openMemberDetail(member.id);
     }

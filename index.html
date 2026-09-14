@@ -325,8 +325,16 @@
 
   <div id="view-register" class="view">
     <form id="register-form">
+      <label>分行 *</label>
+      <select id="branch-select">
+        <option value="">请选择</option>
+        <option value="SP">SRI PETALING</option>
+        <option value="SD">SERDANG RAYA</option>
+      </select>
+      <div class="field-error" id="branch-error">请选择分行</div>
+
       <label>会员编号 *</label>
-      <input type="text" name="member_code" id="member_code" required placeholder="例：SP001">
+      <input type="text" name="member_code" id="member_code" required placeholder="先选分行，会自动产生编号">
 
       <label>姓名 *</label>
       <input type="text" name="name" id="name" required>
