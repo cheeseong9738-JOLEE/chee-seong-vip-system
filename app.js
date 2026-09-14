@@ -466,20 +466,15 @@ async function redeemSpecial(benefitKey, period) {
   const status = getSpecialStatus(registerDate, startOfToday(), already);
   if (status !== '可领取' && status !== '已过期') return; // TEMP-BACKFILL：已过期用于补登旧资料，导入完请删掉
 
+  // TEMP-BACKFILL：一次性福利导入期间一律跳日期选择（不分可领取/已过期），
+  // 方便补登旧系统的历史领取日期。导入完请把这段改回原本的简单确认。
   const benefitLabel = SPECIAL_BENEFITS.find(b => b.key === benefitKey)?.label || benefitKey;
-  let redeemedAt;
-  if (status === '已过期') {
-    const picked = await showConfirm(`「${benefitLabel}」会员已过期，这是补登旧系统的历史领取记录吗？请选实际领取日期：`, {
-      withDate: true,
-      defaultDate: toISODate(startOfToday()),
-    });
-    if (!picked) return;
-    redeemedAt = picked;
-  } else {
-    const confirmed = await showConfirm(`确定要核销「${currentMember.name}」的${benefitLabel}吗？`);
-    if (!confirmed) return;
-    redeemedAt = new Date().toISOString();
-  }
+  const picked = await showConfirm(`确定要核销「${currentMember.name}」的${benefitLabel}吗？请选实际领取日期：`, {
+    withDate: true,
+    defaultDate: toISODate(startOfToday()),
+  });
+  if (!picked) return;
+  const redeemedAt = picked;
 
   const { error } = await sb.from('special_redemptions').insert({
     member_id: currentMember.id,
