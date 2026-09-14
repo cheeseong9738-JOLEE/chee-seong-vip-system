@@ -158,8 +158,8 @@ function showConfirm(message) {
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(`view-${name}`).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navBtn = document.querySelector(`.nav-btn[data-view="${name}"]`);
+  document.querySelectorAll('header .nav-btn').forEach(b => b.classList.remove('active'));
+  const navBtn = document.querySelector(`header .nav-btn[data-view="${name}"]`);
   if (navBtn) navBtn.classList.add('active');
 }
 
@@ -463,15 +463,95 @@ function renderLogList(entries) {
   }).join('');
 }
 
+// ==================== 会员列表 / 进群标记 ====================
+
+let allMembersCache = [];
+let currentBranchFilter = 'all';
+
+function getBranch(memberCode) {
+  const code = (memberCode || '').toUpperCase();
+  if (code.startsWith('SD')) return 'SD';
+  if (code.startsWith('SP')) return 'SP';
+  return 'other';
+}
+
+async function loadMembersList() {
+  const { data, error } = await sb
+    .from('members')
+    .select('id, member_code, name, phone, register_date, in_group')
+    .order('member_code', { ascending: true });
+  if (error) {
+    showToast('读取会员列表失败：' + error.message);
+    return;
+  }
+  allMembersCache = data || [];
+  renderMembersList();
+}
+
+function renderMembersList() {
+  const box = document.getElementById('members-list');
+  const filtered = currentBranchFilter === 'all'
+    ? allMembersCache
+    : allMembersCache.filter(m => getBranch(m.member_code) === currentBranchFilter);
+
+  if (filtered.length === 0) {
+    box.innerHTML = `<div class="empty-hint">没有会员资料</div>`;
+    return;
+  }
+
+  const today = startOfToday();
+  box.innerHTML = filtered.map(m => {
+    const expired = isMemberExpired(parseLocalDate(m.register_date), today);
+    return `
+      <div class="member-item ${m.in_group ? 'in-group' : ''}" data-id="${m.id}">
+        <div>
+          <div class="member-item-name">${escapeHtml(m.name)} <span class="badge ${expired ? 'badge-bad' : 'badge-good'}">${expired ? '已过期' : '有效'}</span></div>
+          <div class="member-item-sub">${escapeHtml(m.member_code)} · ${escapeHtml(m.phone)}</div>
+        </div>
+        <div class="member-item-status">${m.in_group ? '✓ 已进群' : '未进群'}</div>
+      </div>
+    `;
+  }).join('');
+
+  box.querySelectorAll('.member-item').forEach(item => {
+    item.addEventListener('click', () => toggleInGroup(item.dataset.id));
+  });
+}
+
+async function toggleInGroup(memberId) {
+  const member = allMembersCache.find(m => m.id === memberId);
+  if (!member) return;
+  const newValue = !member.in_group;
+  member.in_group = newValue; // 先更新画面，感觉比较即时
+  renderMembersList();
+
+  const { error } = await sb.from('members').update({ in_group: newValue }).eq('id', memberId);
+  if (error) {
+    member.in_group = !newValue; // 失败就改回来
+    renderMembersList();
+    showToast('更新失败：' + error.message);
+  }
+}
+
 // ==================== 事件绑定 ====================
 
 document.addEventListener('DOMContentLoaded', () => {
   initOperatorField();
 
-  document.querySelectorAll('.nav-btn').forEach(btn => {
+  document.querySelectorAll('header .nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       showView(btn.dataset.view);
       if (btn.dataset.view === 'log') loadRedemptionLog();
+      if (btn.dataset.view === 'members') loadMembersList();
+    });
+  });
+
+  document.querySelectorAll('.branch-filter .nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentBranchFilter = btn.dataset.branch;
+      document.querySelectorAll('.branch-filter .nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderMembersList();
     });
   });
 

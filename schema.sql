@@ -14,6 +14,7 @@ create table if not exists members (
   register_date date not null,
   payment_method text,
   created_by text not null, -- 谁注册的这个会员（不用密码登入，靠员工自己填名字，方便日后追查）
+  in_group boolean not null default false, -- 有没有邀请进 VIP 群组，分店（大城堡/沙登）直接从 member_code 前缀（SP/SD）判断，不另外存栏位
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
