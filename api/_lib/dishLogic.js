@@ -51,4 +51,34 @@ function toMalaysiaISODate(dateOrTimestamp) {
   }).format(d);
 }
 
-module.exports = { addYears, getCycleStart, toISODate, parseLocalDate, todayInMalaysia, toMalaysiaISODate };
+// 跟 app.js 里的 getDishStatus 逐字同步——那边改了这里也要跟着改。
+// 返回 '未开放' | '可领取' | '已作废' | '已领取'
+function getDishStatus(registerDate, dishMonth, today, redeemed) {
+  if (redeemed) return '已领取';
+
+  const cycleStart = getCycleStart(registerDate, today);
+  const cycleEnd = addYears(cycleStart, 1);
+  const rm = registerDate.getMonth() + 1;
+
+  if (dishMonth === rm) {
+    const windowAEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, 1);
+    const windowBStart = new Date(cycleEnd.getFullYear(), cycleEnd.getMonth(), 1);
+
+    if (today >= cycleStart && today < windowAEnd) return '可领取';
+    if (today >= windowBStart && today < cycleEnd) return '可领取';
+    if (windowBStart >= cycleEnd) return '已作废';
+    return '未开放';
+  }
+
+  const year = dishMonth >= rm ? cycleStart.getFullYear() : cycleStart.getFullYear() + 1;
+  const start = new Date(year, dishMonth - 1, 1);
+  const end = new Date(year, dishMonth, 1);
+
+  if (today < start) return '未开放';
+  if (today >= end) return '已作废';
+  return '可领取';
+}
+
+module.exports = {
+  addYears, getCycleStart, toISODate, parseLocalDate, todayInMalaysia, toMalaysiaISODate, getDishStatus,
+};

@@ -75,3 +75,18 @@ select cron.schedule(
   );
   $$
 );
+
+-- ============ 每天标记已作废的空白格子（系统 → Sheet，写"作废"两个字） ============
+-- "已作废"是时间到了自然发生的状态，没有资料库事件可以触发，只能定时扫描。
+-- 00:30 (Asia/Kuala_Lumpur) = 16:30 UTC 前一天
+
+select cron.schedule(
+  'mark-expired-dishes',
+  '30 16 * * *',
+  $$
+  select net.http_post(
+    url := '<VERCEL_URL>/api/mark-expired',
+    headers := jsonb_build_object('x-sync-secret', '<SYNC_SECRET>')
+  );
+  $$
+);
