@@ -35,17 +35,30 @@ module.exports = async function handler(req, res) {
     special.forEach(r => { specialByKey[specialKey(r.member_id, r.benefit_type, r.period)] = r; });
 
     let updated = 0;
+    const failedCodes = []; // 一行出错不该拖累其他人，记下来但继续跑下一行
 
     for (const row of dataRows) {
       const code = (row[headerIndex.MemberCode] || '').toString().trim();
       if (!code) continue;
 
+      try {
+        await processRow({ row, code });
+      } catch (err) {
+        console.error(`poll-sheet: 处理 ${code} 出错`, err);
+        failedCodes.push(code);
+      }
+    }
+
+    res.status(200).json({ ok: true, updated, failedCodes });
+    return;
+
+    async function processRow({ row, code }) {
       let member = membersByCode[code];
 
       if (!member) {
         const name = (row[headerIndex.Name] || '').toString().trim();
         const phone = (row[headerIndex['Phone Number']] || '').toString().trim();
-        if (!name || !phone) continue; // 资料不够，没办法建会员，跳过
+        if (!name || !phone) return; // 资料不够，没办法建会员，跳过
 
         const created = await sbPost('/members', {
           member_code: code,
@@ -60,7 +73,7 @@ module.exports = async function handler(req, res) {
         member = Array.isArray(created) ? created[0] : created;
         membersByCode[code] = member;
         updated++;
-        continue; // 刚建的会员，领取记录下一次轮询再处理
+        return; // 刚建的会员，领取记录下一次轮询再处理
       }
 
       // 比对基本资料栏位，Sheet 跟资料库不一样就以 Sheet 为准写回去
@@ -104,8 +117,6 @@ module.exports = async function handler(req, res) {
         if (changed) updated++;
       }
     }
-
-    res.status(200).json({ ok: true, updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: String(err.message || err) });
@@ -114,6 +125,11 @@ module.exports = async function handler(req, res) {
 
 // 单一格子（一个月份的菜品 或 一个一次性福利）在 Sheet 跟 Supabase 之间的比对同步
 async function syncCellToSupabase({ sheetValue, existing, insertPath, insertExtra, deletePath }) {
+  // "作废"是 /api/mark-expired 自动填的提示文字，不是真的领取日期，不能当日期处理。
+  // 之前漏了这个检查，导致整个轮询在遇到第一个"作废"儲存格时就直接报错中断，
+  // 后面所有会员（包括这个人自己改的其他栏位）都没机会同步到。
+  if (sheetValue === '作废') return false;
+
   if (sheetValue) {
     if (!existing) {
       await sbPost(insertPath, { ...insertExtra, redeemed_at: sheetValue, redeemed_by: 'Google Sheet' });
