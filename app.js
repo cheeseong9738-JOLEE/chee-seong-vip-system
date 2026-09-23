@@ -12,7 +12,7 @@ const SPECIAL_BENEFITS = [
   { key: 'MidAutumnSet', label: '中秋套餐' },
 ];
 
-const PAYMENT_METHODS = ['现金', 'Touch \'n Go'];
+const PAYMENT_METHODS = ['Cash', 'Touch \'n Go'];
 
 // 操作员 / 推荐人共用同一份员工名单
 const STAFF_LIST = ['BENZ', 'YAN', 'SHUQI', 'PAULINE', 'ANGEL', 'XIAOHAO', 'SOBU', 'PEIQI', 'EZAC', 'CRYSTAL'];
@@ -183,7 +183,7 @@ function showToast(msg) {
 function populateStaffSelect(selectEl) {
   selectEl.innerHTML = `<option value="">请选择</option>` +
     STAFF_LIST.map(s => `<option value="${s}">${s}</option>`).join('') +
-    `<option value="${OTHER_VALUE}">其他</option>`;
+    `<option value="${OTHER_VALUE}">Other</option>`;
 }
 
 function getSelectOtherValue(selectEl, otherInputEl) {
