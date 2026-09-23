@@ -78,4 +78,17 @@ async function appendRow(values) {
   return sheetsApi(path, { method: 'POST', body: JSON.stringify({ values: [values] }) });
 }
 
-module.exports = { getValues, updateValues, appendRow };
+// 一次 API 请求写多个儲存格，避免像 mark-expired 这种一次要标记几十格的情况
+// 逐格调用 updateValues 撞到 Sheets 「每分钟 60 次写入」的配额上限。
+// updates: [{ a1: 'M5', value: '作废' }, ...]
+async function batchUpdateValues(updates) {
+  if (updates.length === 0) return;
+  const path = `/values:batchUpdate`;
+  const data = {
+    valueInputOption: 'RAW',
+    data: updates.map(u => ({ range: sheetRange(u.a1), values: [[u.value]] })),
+  };
+  return sheetsApi(path, { method: 'POST', body: JSON.stringify(data) });
+}
+
+module.exports = { getValues, updateValues, appendRow, batchUpdateValues };

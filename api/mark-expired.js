@@ -1,4 +1,4 @@
-const { getValues, updateValues } = require('./_lib/google');
+const { getValues, batchUpdateValues } = require('./_lib/google');
 const { sbGet } = require('./_lib/supabase');
 const { DISH_MONTHS, buildHeaderIndex, colLetter } = require('./_lib/columns');
 const { getDishStatus, parseLocalDate, todayInMalaysia } = require('./_lib/dishLogic');
@@ -23,7 +23,9 @@ module.exports = async function handler(req, res) {
     members.forEach(m => { membersByCode[m.member_code] = m; });
 
     const today = todayInMalaysia();
-    let updated = 0;
+    // 先把所有要改的儲存格收集起来，最后一次打包写入——
+    // 逐格呼叫 Sheets API 在会员/月份多的时候会撞到「每分钟 60 次写入」的配额上限而中断。
+    const updates = [];
 
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
@@ -41,14 +43,14 @@ module.exports = async function handler(req, res) {
         const status = getDishStatus(registerDate, dishMonth, today, false);
         if (status === '已作废') {
           const col = colLetter(headerIndex[header]);
-          await updateValues(`${col}${i + 2}`, [['作废']]);
-          row[headerIndex[header]] = '作废';
-          updated++;
+          updates.push({ a1: `${col}${i + 2}`, value: '作废' });
         }
       }
     }
 
-    res.status(200).json({ ok: true, updated });
+    await batchUpdateValues(updates);
+
+    res.status(200).json({ ok: true, updated: updates.length });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: String(err.message || err) });
