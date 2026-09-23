@@ -612,6 +612,10 @@ async function toggleInGroup(memberId) {
   const member = allMembersCache.find(m => m.id === memberId);
   if (!member) return;
   const newValue = !member.in_group;
+
+  const confirmed = await showConfirm(`确定要把「${member.name}」标记为${newValue ? '已进群' : '未进群'}吗？`);
+  if (!confirmed) return;
+
   member.in_group = newValue; // 先更新画面，感觉比较即时
   renderMembersList();
 
